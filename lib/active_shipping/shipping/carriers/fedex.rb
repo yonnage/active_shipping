@@ -221,7 +221,7 @@ module ActiveMerchant
           
           root_node << XmlNode.new('ShipDateRangeBegin', options['ship_date_range_begin']) if options['ship_date_range_begin']
           root_node << XmlNode.new('ShipDateRangeEnd', options['ship_date_range_end']) if options['ship_date_range_end']
-          root_node << XmlNode.new('IncludeDetailedScans', 1)
+          root_node << XmlNode.new('IncludeDetailedScans', "true")
         end
         xml_request.to_s
       end
