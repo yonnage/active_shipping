@@ -152,13 +152,13 @@ module ActiveMerchant
       def build_rate_request(origin, destination, packages, options={})
         imperial = ['US','LR','MM'].include?(origin.country_code(:alpha2))
 
-        xml_request = XmlNode.new('RateRequest', 'xmlns' => 'http://fedex.com/ws/rate/v6') do |root_node|
+        xml_request = XmlNode.new('RateRequest', 'xmlns' => 'http://fedex.com/ws/rate/v10') do |root_node|
           root_node << build_request_header
 
           # Version
           root_node << XmlNode.new('Version') do |version_node|
             version_node << XmlNode.new('ServiceId', 'crs')
-            version_node << XmlNode.new('Major', '6')
+            version_node << XmlNode.new('Major', '10')
             version_node << XmlNode.new('Intermediate', '0')
             version_node << XmlNode.new('Minor', '0')
           end
@@ -181,8 +181,11 @@ module ActiveMerchant
             
             rs << XmlNode.new('RateRequestTypes', 'ACCOUNT')
             rs << XmlNode.new('PackageCount', packages.size)
-            packages.each do |pkg|
-              rs << XmlNode.new('RequestedPackages') do |rps|
+            packages.each_with_index do |pkg, index|
+              rs << XmlNode.new('RequestedPackageLineItems') do |rps|
+                rps << XmlNode.new('SequenceNumber', index + 1)
+                rps << XmlNode.new('GroupNumber', 1)
+                rps << XmlNode.new('GroupPackageCount', 1)
                 rps << XmlNode.new('Weight') do |tw|
                   tw << XmlNode.new('Units', imperial ? 'LB' : 'KG')
                   tw << XmlNode.new('Value', [((imperial ? pkg.lbs : pkg.kgs).to_f*1000).round/1000.0, 0.1].max)
@@ -203,13 +206,13 @@ module ActiveMerchant
       end
       
       def build_tracking_request(tracking_number, options={})
-        xml_request = XmlNode.new('TrackRequest', 'xmlns' => 'http://fedex.com/ws/track/v3') do |root_node|
+        xml_request = XmlNode.new('TrackRequest', 'xmlns' => 'http://fedex.com/ws/track/v5') do |root_node|
           root_node << build_request_header
           
           # Version
           root_node << XmlNode.new('Version') do |version_node|
             version_node << XmlNode.new('ServiceId', 'trck')
-            version_node << XmlNode.new('Major', '3')
+            version_node << XmlNode.new('Major', '5')
             version_node << XmlNode.new('Intermediate', '0')
             version_node << XmlNode.new('Minor', '0')
           end

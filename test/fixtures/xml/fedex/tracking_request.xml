@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<TrackRequest xmlns="http://fedex.com/ws/track/v3">
+<TrackRequest xmlns="http://fedex.com/ws/track/v5">
   <WebAuthenticationDetail>
     <UserCredential>
       <Key>1111</Key>
@@ -15,7 +15,7 @@
   </TransactionDetail>
   <Version>
     <ServiceId>trck</ServiceId>
-    <Major>3</Major>
+    <Major>5</Major>
     <Intermediate>0</Intermediate>
     <Minor>0</Minor>
   </Version>

@@ -341,6 +341,7 @@ module ActiveMerchant
           unless activities.empty?
             shipment_events = activities.map do |activity|
               description = activity.get_text('Status/StatusType/Description').to_s
+              activity_status_code = activity.get_text('Status/StatusType/Code').to_s
               zoneless_time = if (time = activity.get_text('Time')) &&
                                  (date = activity.get_text('Date'))
                 time, date = time.to_s, date.to_s
@@ -348,8 +349,14 @@ module ActiveMerchant
                 year, month, day = date[0..3], date[4..5], date[6..7]
                 Time.utc(year, month, day, hour, minute, second)
               end
+              
+              # Set status to delivered if the package as been "delivered" via customer pickup.
+              # UPS sets the last status as an exception when this happens
+              if activity_status_code && activity_status_code == "D"
+                status = TRACKING_STATUS_CODES[activity_status_code]
+              end
               location = location_from_address_node(activity.elements['ActivityLocation/Address'])
-              ShipmentEvent.new(description, zoneless_time, location)
+              ShipmentEvent.new(description, zoneless_time, location, nil, activity_status_code)
             end
             
             shipment_events = shipment_events.sort_by(&:time)
