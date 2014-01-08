@@ -5,3 +5,5 @@ sample.rb
 pkg
 .dotest
 Gemfile.lock
+.ruby-version
+.bundle

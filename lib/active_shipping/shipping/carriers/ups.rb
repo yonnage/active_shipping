@@ -316,9 +316,10 @@ module ActiveMerchant
           tracking_number = first_shipment.get_text('ShipmentIdentificationNumber | Package/TrackingNumber').to_s
           
           # Build status hash
-          status_node = first_package.elements['Activity/Status/StatusType']
-          status_code = status_node.get_text('Code').to_s
-          status_description = status_node.get_text('Description').to_s
+          status_node = first_package.elements['Activity/Status']
+          status_code = status_node.get_text('StatusType/Code').to_s
+          status_code_detail = status_node.get_text('StatusCode/Code').to_s
+          status_description = status_node.get_text('StatusType/Description').to_s
           status = TRACKING_STATUS_CODES[status_code]
 
           if status_description =~ /out.*delivery/i
@@ -340,8 +341,11 @@ module ActiveMerchant
           activities = first_package.get_elements('Activity')
           unless activities.empty?
             shipment_events = activities.map do |activity|
-              description = activity.get_text('Status/StatusType/Description').to_s
-              activity_status_code = activity.get_text('Status/StatusType/Code').to_s
+              activity_status_node = activity.elements['Status/StatusType']
+              activity_status_code_node = activity.elements['Status/StatusCode']
+              description = activity_status_node.get_text('Description').to_s
+              activity_status_code = activity_status_node.get_text('Code').to_s
+              activity_status_code_detail = activity_status_code_node.get_text('Code').to_s
               zoneless_time = if (time = activity.get_text('Time')) &&
                                  (date = activity.get_text('Date'))
                 time, date = time.to_s, date.to_s
@@ -356,7 +360,7 @@ module ActiveMerchant
                 status = TRACKING_STATUS_CODES[activity_status_code]
               end
               location = location_from_address_node(activity.elements['ActivityLocation/Address'])
-              ShipmentEvent.new(description, zoneless_time, location, nil, activity_status_code)
+              ShipmentEvent.new(description, zoneless_time, location, nil, activity_status_code, activity_status_code_detail)
             end
             
             shipment_events = shipment_events.sort_by(&:time)
@@ -368,7 +372,7 @@ module ActiveMerchant
               first_event = shipment_events[0]
               same_country = origin.country_code(:alpha2) == first_event.location.country_code(:alpha2)
               same_or_blank_city = first_event.location.city.blank? or first_event.location.city == origin.city
-              origin_event = ShipmentEvent.new(first_event.name, first_event.time, origin)
+              origin_event = ShipmentEvent.new(first_event.name, first_event.time, origin, nil, first_event.code, first_event.code_detail)
               if same_country and same_or_blank_city
                 shipment_events[0] = origin_event
               else
@@ -381,7 +385,7 @@ module ActiveMerchant
               if !destination
                 destination = shipment_events[-1].location
               end
-              shipment_events[-1] = ShipmentEvent.new(shipment_events.last.name, shipment_events.last.time, destination)
+              shipment_events[-1] = ShipmentEvent.new(shipment_events.last.name, shipment_events.last.time, destination, nil, shipment_events.last.code, shipment_events.last.code_detail)
             end
           end
           
@@ -392,6 +396,7 @@ module ActiveMerchant
           :request => last_request,
           :status => status,
           :status_code => status_code,
+          :status_code_detail => status_code_detail,
           :status_description => status_description,
           :scheduled_delivery_date => scheduled_delivery_date,
           :shipment_events => shipment_events,

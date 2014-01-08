@@ -344,12 +344,13 @@ module ActiveMerchant
             
             location = Location.new(:city => city, :state => state, :postal_code => zip_code, :country => country)
             description = event.get_text('EventDescription').to_s
+            event_type = event.get_text('EventType').to_s
             
             # for now, just assume UTC, even though it probably isn't
             time = Time.parse("#{event.get_text('Timestamp').to_s}")
             zoneless_time = Time.utc(time.year, time.month, time.mday, time.hour, time.min, time.sec)
             
-            shipment_events << ShipmentEvent.new(description, zoneless_time, location)
+            shipment_events << ShipmentEvent.new(description, zoneless_time, location, nil, event_type, nil)
           end
           shipment_events = shipment_events.sort_by(&:time)
 
